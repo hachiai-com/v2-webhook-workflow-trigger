@@ -1,0 +1,10 @@
+{
+  "event": "document.processed",
+  "document_url": "https://docx.hachiai.com/storage/invoices/sample-invoice-2026.pdf",
+  "trace_id": "doculytix-custom-prompt-001",
+  "prompt": "Compare this invoice to our standard vendor list and flag any unknown vendors or amounts over $10,000.",
+  "metadata": {
+    "tenant_id": "bank-a",
+    "document_type": "invoice"
+  }
+}

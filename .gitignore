@@ -1,0 +1,7 @@
+# Doculytix → HachiAI (gitignore)
+
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/

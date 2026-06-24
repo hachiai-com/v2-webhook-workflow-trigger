@@ -1,0 +1,10 @@
+{
+  "event": "document.processed",
+  "document_url": "https://docx.hachiai.com/storage/invoices/sample-invoice-2026.pdf",
+  "trace_id": "doculytix-demo-001",
+  "metadata": {
+    "tenant_id": "bank-a",
+    "document_type": "invoice",
+    "page_count": 3
+  }
+}

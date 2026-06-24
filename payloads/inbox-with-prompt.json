@@ -1,0 +1,6 @@
+{
+  "prompt": "Process this invoice: extract vendor name, invoice number, line items, subtotal, tax, and total.",
+  "event": "document.processed",
+  "document_url": "https://docx.hachiai.com/storage/invoices/sample-invoice-2026.pdf",
+  "trace_id": "doculytix-inbox-demo-001"
+}
