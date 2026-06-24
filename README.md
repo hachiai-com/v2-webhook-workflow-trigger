@@ -46,3 +46,5 @@ See **[README-HACHIAI.md](./README-HACHIAI.md)** for payload format, setup detai
 
 - HachiAI full guide: `ai-agent-platform/docs/features/workflow-webhook-triggers/README.md`
 - HTML presentation: `ai-agent-platform/docs/features/workflow-webhook-triggers/webhook-triggers-guide.html`
+- To test from within the repo, run this in the terminal of this repo: ./scripts/trigger-hachiai.sh --inbox --prompt "What is the result of 10-10+1" 
+- Copy env.example and create .env and then paste required link and hash from the v2
