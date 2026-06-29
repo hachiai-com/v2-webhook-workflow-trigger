@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doculytix → HachiAI Simulator</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface-2: #243044;
+      --border: #2d3a4f;
+      --text: #e8edf4;
+      --muted: #8b9cb3;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #22c55e;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --radius: 10px;
+      --font: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --mono: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    .layout {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 3rem;
+    }
+
+    header {
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      color: var(--muted);
+      margin-top: 0.35rem;
+      font-size: 0.95rem;
+    }
+
+    .status-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.85rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .status-pill strong { color: var(--text); font-weight: 500; }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .dot.ok { background: var(--success); box-shadow: 0 0 8px var(--success); }
+    .dot.err { background: var(--error); }
+    .dot.pending { background: var(--warning); animation: pulse 1.2s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+    }
+
+    .card h2 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .field { margin-bottom: 0.9rem; }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: border-color 0.15s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    textarea {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      resize: vertical;
+      min-height: 72px;
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .preset-btn {
+      padding: 0.35rem 0.7rem;
+      font-size: 0.75rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .preset-btn:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .btn {
+      padding: 0.65rem 1.25rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      flex: 1;
+    }
+
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover { border-color: var(--muted); }
+
+    .response-panel {
+      grid-column: 1 / -1;
+    }
+
+    .response-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .response-header h2 { margin-bottom: 0; }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-weight: 500;
+      display: none;
+    }
+
+    .badge.show { display: inline-block; }
+    .badge.ok { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+    .badge.err { background: rgba(239, 68, 68, 0.15); color: var(--error); }
+
+    pre.output {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      line-height: 1.55;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 120px;
+      color: var(--muted);
+    }
+
+    pre.output.has-data { color: var(--text); }
+
+    .hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    .endpoint-list {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .endpoint-list div {
+      padding: 0.35rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .endpoint-list div:last-child { border-bottom: none; }
+
+    .method {
+      display: inline-block;
+      width: 3rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .method.post { color: #a78bfa; }
+
+    .alert {
+      display: none;
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius);
+      margin-bottom: 1.25rem;
+      font-size: 0.88rem;
+      border: 1px solid;
+    }
+
+    .alert.show { display: block; }
+    .alert.warn {
+      background: rgba(245, 158, 11, 0.1);
+      border-color: rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .mode-tab {
+      flex: 1;
+      padding: 0.55rem 0.75rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .mode-tab:hover { color: var(--text); border-color: var(--muted); }
+    .mode-tab.active {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .mode-panel { display: none; }
+    .mode-panel.active { display: block; }
+
+    .prompt-lg {
+      min-height: 120px;
+      font-family: var(--font);
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <header>
+      <h1>Doculytix → HachiAI Simulator</h1>
+      <p>Simulate <code>document.processed</code> and POST to your HachiAI webhook. Keep the desktop app open and logged in.</p>
+    </header>
+
+    <div class="alert warn" id="configAlert">
+      HachiAI is not configured. Edit <code>.env</code> in the repo root with your real
+      <code>HACHI_WEBHOOK_URL</code> (or <code>HACHI_INBOX_URL</code>) and <code>HACHI_TRIGGER_SECRET</code>
+      from HachiAI, then restart the server.
+    </div>
+
+    <div class="status-bar" id="statusBar">
+      <div class="status-pill">
+        <span class="dot pending" id="healthDot"></span>
+        <span>Service: <strong id="healthLabel">checking…</strong></span>
+      </div>
+      <div class="status-pill">
+        Target: <strong id="hachiTarget">—</strong>
+      </div>
+      <div class="status-pill">
+        Mode: <strong id="inboxMode">—</strong>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Trigger HachiAI</h2>
+
+        <div class="mode-tabs">
+          <button type="button" class="mode-tab active" data-mode="inbox">Inbox — custom prompt</button>
+          <button type="button" class="mode-tab" data-mode="doculytix">Doculytix — document.processed</button>
+        </div>
+
+        <form id="simulateForm">
+          <div class="mode-panel active" id="panel-inbox">
+            <p class="hint" style="margin-bottom: 0.9rem;">
+              Same as <code>./scripts/trigger-hachiai.sh --inbox --prompt "…"</code>.
+              Leave document URL empty for a text-only prompt.
+            </p>
+
+            <div class="field">
+              <label for="inbox_prompt">Custom prompt <span class="hint">(required)</span></label>
+              <textarea id="inbox_prompt" class="prompt-lg" rows="4" placeholder="Make a list of pros and cons of using youtube"></textarea>
+            </div>
+
+            <div class="field">
+              <label for="inbox_document_url">Document URL <span class="hint">(optional — omit for prompt-only)</span></label>
+              <input type="url" id="inbox_document_url" placeholder="Leave empty for prompt-only inbox" />
+            </div>
+          </div>
+
+          <div class="mode-panel" id="panel-doculytix">
+            <div class="presets">
+              <button type="button" class="preset-btn" data-preset="standard">Standard invoice</button>
+              <button type="button" class="preset-btn" data-preset="custom-prompt">Custom prompt override</button>
+            </div>
+
+            <div class="field">
+              <label for="document_url">Document URL</label>
+              <input type="url" id="document_url" name="document_url" placeholder="https://docx.hachiai.com/storage/invoices/..." />
+            </div>
+
+            <div class="row-2">
+              <div class="field">
+                <label for="trace_id">Trace ID <span class="hint">(auto-generated if empty)</span></label>
+                <input type="text" id="trace_id" name="trace_id" placeholder="doculytix-demo-001" />
+              </div>
+              <div class="field">
+                <label for="document_type">Document type</label>
+                <input type="text" id="document_type" name="document_type" value="invoice" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="tenant_id">Tenant ID</label>
+              <input type="text" id="tenant_id" name="tenant_id" value="bank-a" />
+            </div>
+
+            <div class="field">
+              <label for="prompt">Prompt override <span class="hint">(optional — overrides saved automation question)</span></label>
+              <textarea id="prompt" name="prompt" rows="3" placeholder="Compare this invoice to our vendor list…"></textarea>
+            </div>
+
+            <div class="field">
+              <label for="metadata">Extra metadata (JSON, optional)</label>
+              <textarea id="metadata" name="metadata" rows="2" placeholder='{"page_count": 3}'></textarea>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn btn-primary" id="submitBtn">Send to HachiAI</button>
+            <button type="button" class="btn btn-secondary" id="healthBtn">Refresh status</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>API endpoints</h2>
+        <div class="endpoint-list">
+          <div><span class="method">GET</span> /health</div>
+          <div><span class="method post">POST</span> /simulate/inbox</div>
+          <div><span class="method post">POST</span> /simulate/document-processed</div>
+        </div>
+
+        <h2 style="margin-top: 1.25rem;">Setup</h2>
+        <p class="hint" style="margin-top: 0;">
+          <strong>Inbox mode</strong> uses <code>HACHI_INBOX_URL</code> + inbox secret from
+          Settings → External webhook inbox. <strong>Doculytix mode</strong> uses your saved automation webhook.
+        </p>
+      </div>
+
+      <div class="card response-panel">
+        <div class="response-header">
+          <h2>Response</h2>
+          <span class="badge" id="responseBadge"></span>
+        </div>
+        <pre class="output" id="output">Submit the form to simulate Doculytix OCR completion and notify HachiAI.</pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PRESETS = {
+      standard: {
+        document_url: "",
+        trace_id: "doculytix-demo-001",
+        document_type: "invoice",
+        tenant_id: "bank-a",
+        prompt: "",
+        metadata: '{"page_count": 3}',
+      },
+      "custom-prompt": {
+        document_url: "",
+        trace_id: "doculytix-custom-prompt-001",
+        document_type: "invoice",
+        tenant_id: "bank-a",
+        prompt: "Compare this invoice to our standard vendor list and flag any unknown vendors or amounts over $10,000.",
+        metadata: "",
+      },
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const output = $("output");
+    const badge = $("responseBadge");
+    const submitBtn = $("submitBtn");
+
+    let config = {};
+    let currentMode = "inbox";
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll(".mode-tab").forEach((tab) => {
+        tab.classList.toggle("active", tab.dataset.mode === mode);
+      });
+      document.querySelectorAll(".mode-panel").forEach((panel) => {
+        panel.classList.toggle("active", panel.id === `panel-${mode}`);
+      });
+      updateTargetLabel();
+    }
+
+    function updateTargetLabel() {
+      if (!config.hachi_inbox_url && !config.hachi_webhook_url) return;
+      const target = currentMode === "inbox"
+        ? (config.hachi_inbox_url || "(set HACHI_INBOX_URL in .env)")
+        : (config.hachi_webhook_url || "(set HACHI_WEBHOOK_URL in .env)");
+      $("hachiTarget").textContent = target;
+      $("inboxMode").textContent = currentMode === "inbox" ? "Inbox" : "Saved automation";
+    }
+
+    async function loadConfig() {
+      try {
+        const res = await fetch("/api/config");
+        if (res.ok) config = await res.json();
+      } catch (_) {}
+      if (config.default_document_url) {
+        $("document_url").placeholder = config.default_document_url;
+        if (!$("document_url").value) $("document_url").value = config.default_document_url;
+      }
+      for (const key of Object.keys(PRESETS)) {
+        if (!PRESETS[key].document_url && config.default_document_url) {
+          PRESETS[key].document_url = config.default_document_url;
+        }
+      }
+      updateTargetLabel();
+    }
+
+    async function checkHealth() {
+      const dot = $("healthDot");
+      const label = $("healthLabel");
+      const alert = $("configAlert");
+      dot.className = "dot pending";
+      label.textContent = "checking…";
+
+      try {
+        const res = await fetch("/health");
+        const data = await res.json();
+        dot.className = res.ok ? "dot ok" : "dot err";
+        label.textContent = res.ok ? "healthy" : "unhealthy";
+        config.hachi_inbox_url = data.hachi_inbox_url;
+        config.hachi_webhook_url = data.hachi_webhook_url;
+        updateTargetLabel();
+
+        const configured = data.hachi_configured;
+        alert.classList.toggle("show", !configured);
+        submitBtn.disabled = !configured;
+        submitBtn.title = configured ? "" : "Configure .env first";
+
+        return data;
+      } catch (e) {
+        dot.className = "dot err";
+        label.textContent = "unreachable";
+        $("hachiTarget").textContent = "—";
+        alert.classList.add("show");
+        submitBtn.disabled = true;
+        return null;
+      }
+    }
+
+    function applyPreset(name) {
+      const p = PRESETS[name];
+      if (!p) return;
+      $("document_url").value = p.document_url || config.default_document_url || "";
+      $("trace_id").value = p.trace_id;
+      $("document_type").value = p.document_type;
+      $("tenant_id").value = p.tenant_id;
+      $("prompt").value = p.prompt;
+      $("metadata").value = p.metadata;
+    }
+
+    function buildPayload() {
+      if (currentMode === "inbox") {
+        const prompt = $("inbox_prompt").value.trim();
+        const docUrl = $("inbox_document_url").value.trim();
+        if (!prompt) throw new Error("Enter a custom prompt for inbox mode");
+        const body = { use_inbox: true, prompt };
+        if (docUrl) body.document_url = docUrl;
+        return body;
+      }
+
+      const body = {};
+      const docUrl = $("document_url").value.trim();
+      const traceId = $("trace_id").value.trim();
+      const prompt = $("prompt").value.trim();
+      const tenantId = $("tenant_id").value.trim();
+      const docType = $("document_type").value.trim();
+      const metaRaw = $("metadata").value.trim();
+
+      if (docUrl) body.document_url = docUrl;
+      if (traceId) body.trace_id = traceId;
+      if (prompt) body.prompt = prompt;
+      if (tenantId) body.tenant_id = tenantId;
+      if (docType) body.document_type = docType;
+
+      if (metaRaw) {
+        try {
+          const extra = JSON.parse(metaRaw);
+          body.metadata = { tenant_id: tenantId || "bank-a", document_type: docType || "invoice", ...extra };
+        } catch {
+          throw new Error("Invalid JSON in extra metadata field");
+        }
+      }
+
+      return body;
+    }
+
+    function showResponse(data, ok, status) {
+      output.textContent = JSON.stringify(data, null, 2);
+      output.classList.add("has-data");
+      badge.className = "badge show " + (ok ? "ok" : "err");
+      if (ok) {
+        badge.textContent = `HTTP ${status} — success`;
+        return;
+      }
+      if (data.hachi_status === 401) {
+        badge.textContent = "HTTP 401 — invalid trigger secret";
+        const secretHint = currentMode === "inbox"
+          ? "Copy the secret from Settings → General → External webhook inbox"
+          : "Copy the secret from My Automations → Triggers → Doculytix V1";
+        output.textContent =
+          "HachiAI rejected the secret in your .env file.\n\n" +
+          "Fix:\n" +
+          `1. In HachiAI: ${secretHint}\n` +
+          "2. Update HACHI_TRIGGER_SECRET in .env and restart the server\n\n" +
+          "Note: inbox and Doculytix triggers use different secrets.\n\n" +
+          JSON.stringify(data, null, 2);
+        return;
+      }
+      badge.textContent = `HTTP ${status} — failed`;
+    }
+
+    document.querySelectorAll(".mode-tab").forEach((tab) => {
+      tab.addEventListener("click", () => setMode(tab.dataset.mode));
+    });
+
+    document.querySelectorAll(".preset-btn").forEach((btn) => {
+      btn.addEventListener("click", () => applyPreset(btn.dataset.preset));
+    });
+
+    $("healthBtn").addEventListener("click", checkHealth);
+
+    $("simulateForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      output.textContent = "Sending…";
+      badge.className = "badge";
+
+      let body;
+      try {
+        body = buildPayload();
+      } catch (err) {
+        showResponse({ error: err.message }, false, 400);
+        submitBtn.disabled = false;
+        return;
+      }
+
+      try {
+        const endpoint = currentMode === "inbox" ? "/simulate/inbox" : "/simulate/document-processed";
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        showResponse(data, data.success !== false && res.ok, res.status);
+      } catch (err) {
+        showResponse({ error: String(err) }, false, 0);
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    loadConfig().then(checkHealth);
+  </script>
+</body>
+</html>
